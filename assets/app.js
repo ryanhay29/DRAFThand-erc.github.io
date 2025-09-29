@@ -3,14 +3,16 @@ const CSV_PATH = window.CSV_PATH || "./data/commercial-robot-hands.csv";
 
 // Exact column names in your CSV
 const COL = {
-  ACTUATORS: "# Actuators",
   NAME: "Hand name",
   COMPANY: "Company name",
   LINK: "Link to hand page",
-  DESC: "Text description (important basic facts, things we particularly care about, and differentiating points, not all details)",
-  PHOTO_FILE: "Photo filename (coming soon)",
-  DATE_ADDED: "Date added",
-  NOTES: "notes",
+  NUMFINGERS: "# of Fingers",
+  DOF: "Total DoF",
+  NUMACTUATORS: "# of Actuators",
+  PHOTO_FILE: "Photo filename",
+  DESC: "Text description",
+  DATE_UPDATED: "Date updated",
+  NOTES: "Notes",
 };
 
 // If PHOTO_FILE has a filename, look for it in /assets/img/<filename>
@@ -59,9 +61,12 @@ function renderHeader() {
     { key: "_image", label: "Image" },
     { key: COL.NAME, label: "Hand name" },
     { key: COL.COMPANY, label: "Company" },
-    { key: COL.ACTUATORS, label: "# Actuators" },
+    { key: COL.NUMFINGERS, label: "# of Fingers"},
+    { key: COL.DOF, label: "DoF" },
+    { key: COL.NUMACTUATORS, label: "# of Actuators"},
     { key: COL.DESC, label: "Description" },
-    { key: COL.DATE_ADDED, label: "Date added" },
+    { key: COL.DATE_UPDATED, label: "Date updated" },
+    { key: COL.NOTES, label: "Notes" },
   ];
 
   thead.innerHTML = "<tr>" + headers.map(h => {
@@ -89,10 +94,13 @@ function renderBody() {
   tbody.innerHTML = rows.map(r => {
     const name = norm(r[COL.NAME]);
     const company = norm(r[COL.COMPANY]);
-    const actuators = norm(r[COL.ACTUATORS]);
+    const numfingers = norm(r[COL.NUMFINGERS]);
+    const dof = norm(r[COL.DOF]);
+    const numactuators = norm(r[COL.NUMACTUATORS]);
     const link = norm(r[COL.LINK]);  // we'll use this to wrap the name
     const desc = norm(r[COL.DESC]);
-    const dateAdded = norm(r[COL.DATE_ADDED]);
+    const dateUpdated = norm(r[COL.DATE_UPDATED]);
+    const notes = norm(r[COL.NOTES]);
 
     const imgUrl = imageFromPhotoColumn(r[COL.PHOTO_FILE]);
     const imgCell = (toggleImages && !toggleImages.checked) ? "" :
@@ -125,9 +133,12 @@ function renderBody() {
       ${imgCell}
       <td>${nameCell}</td>
       <td>${companyCell}</td>
-      <td>${actuators}</td>
+      <td>${numfingers}</td>
+      <td>${dof}</td>
+      <td>${numactuators}</td>
       ${descCell}
-      <td>${dateAdded}</td>
+      <td>${dateUpdated}</td>
+      <td>${notes}</td>
     </tr>`;
   }).join("");
 }
@@ -170,23 +181,39 @@ function applyTransforms() {
   viewRows = rawRows.filter(r => {
     if (!needle) return true;
     const hay = [
-      r[COL.NAME], r[COL.COMPANY], r[COL.DESC], r[COL.DATE_ADDED],
+      r[COL.NAME], r[COL.COMPANY], r[COL.NUMFINGERS], r[COL.DOF], r[COL.NUMACTUATORS], r[COL.DESC], r[COL.DATE_UPDATED],r[COL.NOTES],
       // you can add r[COL.NOTES] here if you want search to include the hidden notes
     ].map(v => norm(v).toLowerCase()).join(" ");
     return hay.includes(needle);
   });
 
   // Sort (works on any visible column key)
-  if (sortBy) {
-    const { key, dir } = sortBy;
-    viewRows.sort((a, b) => {
-      const av = norm(a[key]);
-      const bv = norm(b[key]);
-      const an = isNumeric(av), bn = isNumeric(bv);
-      if (an && bn) return (Number(av) - Number(bv)) * dir;
-      return av.localeCompare(bv, undefined, { numeric: true, sensitivity: "base" }) * dir;
-    });
-  }
+if (sortBy) {
+const { key, dir } = sortBy;
+
+viewRows.sort((a, b) => {
+const av = norm(a[key]);
+const bv = norm(b[key]);
+
+const valA = String(av).trim();
+const valB = String(bv).trim();
+
+// Treat "N/A" as null (for sorting purposes)
+const an = valA === "N/A" ? null : parseFloat(valA.split(/[-*]/)[0]);
+const bn = valB === "N/A" ? null : parseFloat(valB.split(/[-*]/)[0]);
+
+const isANa = an === null;
+const isBNa = bn === null;
+
+// Handle N/A sorting
+if (isANa && isBNa) return 0;
+if (isANa) return 1 * dir; // Push "N/A" to bottom
+if (isBNa) return -1 * dir;
+
+// Compare numerically
+return (an - bn) * dir;
+});
+}
 }
 
 /* === Init === */
@@ -293,4 +320,3 @@ loadCSV().catch(err => {
   window.addEventListener('scroll', () => { preview.style.display = 'none'; activeTarget = null; }, { passive: true });
   window.addEventListener('resize', () => { preview.style.display = 'none'; activeTarget = null; });
 })();
-
