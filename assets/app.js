@@ -6,13 +6,12 @@ const COL = {
   NAME: "Hand name",
   COMPANY: "Company name",
   LINK: "Link to hand page",
-  NUMFINGERS: "# of Fingers",
-  DOF: "Total DoF",
-  NUMACTUATORS: "# of Actuators",
+  FINGERS: "# of Fingers",
+  TOTALDOF: "Total DoF",
+  ACTUATORS: "# of Actuators",
   PHOTO_FILE: "Photo filename",
   DESC: "Text description",
   DATE_UPDATED: "Date updated",
-  NOTES: "Notes",
 };
 
 // If PHOTO_FILE has a filename, look for it in /assets/img/<filename>
@@ -61,12 +60,11 @@ function renderHeader() {
     { key: "_image", label: "Image" },
     { key: COL.NAME, label: "Hand name" },
     { key: COL.COMPANY, label: "Company" },
-    { key: COL.NUMFINGERS, label: "# of Fingers"},
-    { key: COL.DOF, label: "DoF" },
-    { key: COL.NUMACTUATORS, label: "# of Actuators"},
+    { key: COL.FINGERS, label: "# of Fingers" },
+    { key: COL.TOTALDOF, label: "DoF" },
+    { key: COL.ACTUATORS, label: "# of Actuators" },
     { key: COL.DESC, label: "Description" },
     { key: COL.DATE_UPDATED, label: "Date updated" },
-    { key: COL.NOTES, label: "Notes" },
   ];
 
   thead.innerHTML = "<tr>" + headers.map(h => {
@@ -94,13 +92,12 @@ function renderBody() {
   tbody.innerHTML = rows.map(r => {
     const name = norm(r[COL.NAME]);
     const company = norm(r[COL.COMPANY]);
-    const numfingers = norm(r[COL.NUMFINGERS]);
-    const dof = norm(r[COL.DOF]);
-    const numactuators = norm(r[COL.NUMACTUATORS]);
+    const fingers = norm(r[COL.FINGERS]);
+    const totaldof = norm(r[COL.TOTALDOF]);
+    const actuators = norm(r[COL.ACTUATORS]);
     const link = norm(r[COL.LINK]);  // we'll use this to wrap the name
     const desc = norm(r[COL.DESC]);
     const dateUpdated = norm(r[COL.DATE_UPDATED]);
-    const notes = norm(r[COL.NOTES]);
 
     const imgUrl = imageFromPhotoColumn(r[COL.PHOTO_FILE]);
     const imgCell = (toggleImages && !toggleImages.checked) ? "" :
@@ -133,12 +130,11 @@ function renderBody() {
       ${imgCell}
       <td>${nameCell}</td>
       <td>${companyCell}</td>
-      <td>${numfingers}</td>
-      <td>${dof}</td>
-      <td>${numactuators}</td>
+      <td>${fingers}</td>
+      <td>${totaldof}</td>
+      <td>${actuators}</td>
       ${descCell}
       <td>${dateUpdated}</td>
-      <td>${notes}</td>
     </tr>`;
   }).join("");
 }
@@ -181,39 +177,23 @@ function applyTransforms() {
   viewRows = rawRows.filter(r => {
     if (!needle) return true;
     const hay = [
-      r[COL.NAME], r[COL.COMPANY], r[COL.NUMFINGERS], r[COL.DOF], r[COL.NUMACTUATORS], r[COL.DESC], r[COL.DATE_UPDATED],r[COL.NOTES],
+      r[COL.NAME], r[COL.COMPANY], r[COL.FINGERS], r[COL.TOTALDOF], r[COL.ACTUATORS], r[COL.DESC], r[COL.DATE_UPDATED],
       // you can add r[COL.NOTES] here if you want search to include the hidden notes
     ].map(v => norm(v).toLowerCase()).join(" ");
     return hay.includes(needle);
   });
 
   // Sort (works on any visible column key)
-if (sortBy) {
-const { key, dir } = sortBy;
-
-viewRows.sort((a, b) => {
-const av = norm(a[key]);
-const bv = norm(b[key]);
-
-const valA = String(av).trim();
-const valB = String(bv).trim();
-
-// Treat "N/A" as null (for sorting purposes)
-const an = valA === "N/A" ? null : parseFloat(valA.split(/[-*]/)[0]);
-const bn = valB === "N/A" ? null : parseFloat(valB.split(/[-*]/)[0]);
-
-const isANa = an === null;
-const isBNa = bn === null;
-
-// Handle N/A sorting
-if (isANa && isBNa) return 0;
-if (isANa) return 1 * dir; // Push "N/A" to bottom
-if (isBNa) return -1 * dir;
-
-// Compare numerically
-return (an - bn) * dir;
-});
-}
+  if (sortBy) {
+    const { key, dir } = sortBy;
+    viewRows.sort((a, b) => {
+      const av = norm(a[key]);
+      const bv = norm(b[key]);
+      const an = isNumeric(av), bn = isNumeric(bv);
+      if (an && bn) return (Number(av) - Number(bv)) * dir;
+      return av.localeCompare(bv, undefined, { numeric: true, sensitivity: "base" }) * dir;
+    });
+  }
 }
 
 /* === Init === */
