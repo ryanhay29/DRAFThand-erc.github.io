@@ -61,7 +61,7 @@ function renderHeader() {
     { key: COL.NAME, label: "Hand name" },
     { key: COL.COMPANY, label: "Company" },
     { key: COL.FINGERS, label: "# of Fingers" },
-    { key: COL.TOTALDOF, label: "DoF" },
+    { key: COL.TOTALDOF, label: "  DoF  " },
     { key: COL.ACTUATORS, label: "# of Actuators" },
     { key: COL.DESC, label: "Description" },
     { key: COL.DATE_UPDATED, label: "Date updated" },
